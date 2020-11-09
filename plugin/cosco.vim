@@ -41,6 +41,7 @@ function! AutoCommaOrSemiColon()
 endfunction
 
 command! CommaOrSemiColon call cosco#commaOrSemiColon()
+command! SmartSemicolon call cosco#smartSemicolon()
 
 "====================================
 " <Plug> mapping with repeat support:
@@ -50,3 +51,6 @@ nnoremap <silent> <nowait> <Plug>(cosco-commaOrSemiColon)
 \ :<C-u>silent! call cosco#commaOrSemiColon()<Bar>
 \ silent! call repeat#set("\<Plug>(cosco-commaOrSemiColon)")<CR>
 
+nnoremap <silent> <nowait> <Plug>(cosco-smartSemicolon)
+\ :<C-u>silent! call cosco#smartSemicolon()<Bar>
+\ silent! call repeat#set("\<Plug>(cosco-smartSemicolon)")<CR>

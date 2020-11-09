@@ -120,34 +120,42 @@ endfunction
 function! cosco#makeItASemiColon()
     " Prevent unnecessary buffer change:
     if b:currentLineLastChar == ';'
-        return
+        return 0
     endif
 
     exec("s/[,;]\\?$/;/e")
+    return 1
 endfunction
 
 function! cosco#makeItAComma()
     " Prevent unnecessary buffer change:
     if b:currentLineLastChar == ','
-        return
+        return 0
     endif
 
     exec("s/[,;]\\?$/,/e")
+    return 1
 endfunction
 
 " ==============
 " Main function:
 " ==============
+function! cosco#smartSemicolon()
+    if (!cosco#commaOrSemiColon())
+        exec("normal! i;")
+        exec("normal! l")
+    endif
+endfunction
 
 function! cosco#commaOrSemiColon()
     " Don't run if we're in a readonly buffer:
     if (&readonly == 1)
-        return
+        return 0
     endif
 
     " Dont run if current filetype has been disabled:
     if (s:ignoreCurrentFiletype())
-        return
+        return 0
     endif
 
     let b:wasExtensionExecuted = 0
@@ -171,60 +179,61 @@ function! cosco#commaOrSemiColon()
     let b:nextLineFirstChar = matchstr(s:strip(b:nextLine), '^.')
 
     if (s:hasUnactionableLines())
-        return
+        return 0
     endif
 
     call s:filetypeOverrides()
 
     if (b:wasExtensionExecuted)
         call setpos('.', b:originalCursorPosition)
-        return
+        return 0
     endif
 
     if b:prevLineLastChar == ','
         if b:nextLineLastChar == ','
-            call cosco#makeItAComma()
+            let ret = cosco#makeItAComma()
         elseif b:nextLineIndentation < b:currentLineIndentation
-            call cosco#makeItASemiColon()
+            let ret = cosco#makeItASemiColon()
         elseif b:nextLineIndentation == b:currentLineIndentation
-            call cosco#makeItAComma()
+            let ret = cosco#makeItAComma()
         endif
     elseif b:prevLineLastChar == ';'
-        call cosco#makeItASemiColon()
+        let ret = cosco#makeItASemiColon()
     elseif b:prevLineLastChar == '{'
         if b:nextLineLastChar == ','
             " TODO idea: externalize this into a "javascript" extension:
             if s:strip(b:nextLine) =~ '^var'
-                call cosco#makeItASemiColon()
+                let ret = cosco#makeItASemiColon()
             endif
             call cosco#makeItAComma()
         " TODO idea: externalize this into a "javascript" extension:
         elseif s:strip(b:prevLine) =~ '^var'
             if b:nextLineFirstChar == '}'
-                call cosco#removeCommaOrSemiColon()
+                let ret = cosco#removeCommaOrSemiColon()
             endif
         else
-            call cosco#makeItASemiColon()
+            let ret = cosco#makeItASemiColon()
         endif
     elseif b:prevLineLastChar == '['
         if b:nextLineFirstChar == ']'
-            call cosco#removeCommaOrSemiColon()
+            let ret = cosco#removeCommaOrSemiColon()
         elseif b:currentLineLastChar =~ '[}\])]'
-            call cosco#makeItASemiColon()
+            let ret = cosco#makeItASemiColon()
         else
-            call cosco#makeItAComma()
+            let ret = cosco#makeItAComma()
         endif
     elseif b:prevLineLastChar == '('
         if b:nextLineFirstChar == ')'
-            call cosco#removeCommaOrSemiColon()
+            let ret = cosco#removeCommaOrSemiColon()
         else
-            call cosco#makeItAComma()
+            let ret = cosco#makeItAComma()
         endif
     elseif b:nextLineFirstChar == ']'
-        call cosco#removeCommaOrSemiColon()
+        let ret = cosco#removeCommaOrSemiColon()
     else
-        call cosco#makeItASemiColon()
+        let ret = cosco#makeItASemiColon()
     endif
 
     call setpos('.', b:originalCursorPosition)
+    return ret
 endfunction
